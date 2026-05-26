@@ -24,6 +24,9 @@ subtitle_output/
 
 # Frontend dependencies (reinstall with pnpm install)
 frontend/node_modules/
+# Keep built assets for one-command backend serve (see frontend/.gitignore)
+!frontend/dist/
+!frontend/dist/**
 
 # User config (contains API keys, local paths)
 config/settings.json
