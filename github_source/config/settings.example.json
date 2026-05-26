@@ -1,0 +1,21 @@
+{
+  "lang": "zh",
+  "model_source": "modelscope",
+  "model_dir": "models",
+  "asr_model": "Qwen/Qwen3-ASR-1.7B",
+  "aligner_model": "Qwen/Qwen3-ForcedAligner-0.6B",
+  "device": "auto",
+  "dtype": "bfloat16",
+  "asr_model_size": "0.6B",
+  "llm_enabled": false,
+  "llm_type": "ollama",
+  "ollama_endpoint": "",
+  "ollama_model": "",
+  "openai_base_url": "",
+  "openai_api_key": "",
+  "openai_model": "",
+  "default_output_format": "srt",
+  "punctuation_remove_enabled": false,
+  "punctuation_chars": "",
+  "llm_platform": ""
+}

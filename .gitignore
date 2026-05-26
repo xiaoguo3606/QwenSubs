@@ -1,0 +1,42 @@
+# Virtual environment
+venv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Model files (download via Settings page)
+models/
+!models/.gitkeep
+
+# User uploads and generated subtitles
+uploads/
+subtitle_output/
+
+# Local test media (do not commit)
+*.mp3
+*.wav
+*.m4a
+*.flac
+*.mp4
+*.mkv
+
+# Frontend dependencies (reinstall with pnpm install)
+frontend/node_modules/
+
+# User config (contains API keys, local paths)
+config/settings.json
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
+
+# macOS junk
+.DS_Store
+Icon?
+
+# Temp audio files
+/tmp/qwen_asr_*.wav
+/tmp/qwen_chunk_*.wav
