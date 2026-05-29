@@ -63,11 +63,37 @@ REM ---- 2. ffmpeg check ----------------------------------
 echo [2/5] 检查系统依赖...
 
 where ffmpeg >nul 2>&1
-if errorlevel 1 (
-    echo   未找到 ffmpeg（音频转换将回退到 pydub）
-) else (
-    echo   ffmpeg 已找到
+if not errorlevel 1 goto :ffmpeg_found
+echo   未找到 ffmpeg
+echo   WAV/FLAC/OGG 格式可用内置工具处理
+echo   其他格式（MP3/M4A 等）需要 ffmpeg
+echo.
+echo   按任意键自动下载 ffmpeg（约 5 秒），或关闭窗口手动安装
+pause >nul
+echo   正在下载 ffmpeg...
+powershell -Command "try { (New-Object System.Net.WebClient).DownloadFile('https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip', '%TEMP%\ffmpeg.zip') } catch { exit 1 }" >nul 2>&1
+if not exist "%TEMP%\ffmpeg.zip" (
+    echo   ffmpeg 下载失败，请手动安装：https://ffmpeg.org/download.html
+    goto :ffmpeg_done
 )
+echo   正在解压 ffmpeg...
+powershell -Command "Expand-Archive -Path '%TEMP%\ffmpeg.zip' -DestinationPath '%TEMP%\ffmpeg-extracted' -Force" >nul 2>&1
+for /d %%i in ("%TEMP%\ffmpeg-extracted\*") do (
+    if exist "%%i\bin\ffmpeg.exe" (
+        xcopy /e /i /y "%%i\bin" "%~dp0ffmpeg-bin\" >nul
+    )
+)
+del "%TEMP%\ffmpeg.zip"
+if exist "%~dp0ffmpeg-bin\ffmpeg.exe" (
+    set "PATH=%~dp0ffmpeg-bin;%PATH%"
+    echo   ffmpeg 已安装
+) else (
+    echo   ffmpeg 解压失败，请手动安装：https://ffmpeg.org/download.html
+)
+goto :ffmpeg_done
+:ffmpeg_found
+echo   ffmpeg 已找到
+:ffmpeg_done
 
 REM ---- 3. Virtual environment ---------------------------
 echo [3/5] 设置虚拟环境...
@@ -94,6 +120,18 @@ if errorlevel 1 (
     exit /b 1
 )
 echo   依赖安装完成
+
+REM ---- 3b. CUDA check (Windows only) -------------------------
+"%VENV_PYTHON%" -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+if errorlevel 1 (
+    REM Check if NVIDIA GPU exists via nvidia-smi
+    where nvidia-smi >nul 2>&1
+    if not errorlevel 1 (
+        echo   检测到 NVIDIA 显卡，正在安装 CUDA 版 PyTorch...
+        "%VENV_PYTHON%" -m pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cu124 -q
+        echo   CUDA PyTorch 安装完成
+    )
+)
 
 REM ---- 4. Frontend (pre-built in dist/) ------------------
 echo [4/5] 准备前端...
