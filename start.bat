@@ -3,7 +3,7 @@ cd /d "%~dp0"
 chcp 65001 >nul 2>&1
 
 echo ============================================
-echo        QwenSub - One-Click Startup
+echo      QwenSubs v0.0.2 - 一键启动
 echo ============================================
 echo.
 
@@ -13,7 +13,7 @@ set PORT=8000
 set MAX_PORT=8005
 
 REM ---- 1. Find or install Python -------------------------
-echo [1/5] Checking Python...
+echo [1/5] 检查 Python 环境...
 
 set PYTHON_CMD=python
 
@@ -27,14 +27,14 @@ if not errorlevel 1 (
     )
 )
 
-echo   Python 3.10+ not found. Attempting to download...
+echo   未找到 Python 3.10+，正在尝试下载...
 echo.
 
 set PY_VERSION=3.12.9
 set INSTALLER=%TEMP%\python-installer.exe
 
 REM Try multiple download mirrors
-echo   Downloading Python %PY_VERSION% (this may take a minute)...
+echo   正在下载 Python %PY_VERSION%（可能需要一分钟）...
 powershell -Command "try { (New-Object System.Net.WebClient).DownloadFile('https://www.python.org/ftp/python/%PY_VERSION%/python-%PY_VERSION%-amd64.exe', '%INSTALLER%') } catch { exit 1 }" >nul 2>&1
 
 if not exist "%INSTALLER%" (
@@ -61,17 +61,17 @@ for /f "usebackq delims=" %%i in (`python --version 2^>nul`) do echo   %%i insta
 
 REM ---- 2. ffmpeg check ----------------------------------
 :setup_env
-echo [2/5] Checking system dependencies...
+echo [2/5] 检查系统依赖...
 
 where ffmpeg >nul 2>&1
 if errorlevel 1 (
-    echo   ffmpeg not found (audio conversion may fall back to pydub)
+    echo   未找到 ffmpeg（音频转换将回退到 pydub）
 ) else (
-    echo   ffmpeg found
+    echo   ffmpeg 已找到
 )
 
 REM ---- 3. Virtual environment ---------------------------
-echo [3/5] Setting up virtual environment...
+echo [3/5] 设置虚拟环境...
 
 if not exist "%VENV_PYTHON%" (
     python -m venv venv
@@ -82,9 +82,9 @@ if not exist "%VENV_PYTHON%" (
     pause
     exit /b 1
 )
-echo   Virtual environment ready
+echo   虚拟环境已就绪
 
-echo   Installing dependencies (this may take a while)...
+echo   正在安装依赖（可能需要一些时间）...
 "%VENV_PYTHON%" -m pip install --upgrade pip -q >nul 2>&1
 "%VENV_PYTHON%" -m pip install -r requirements.txt -q
 if errorlevel 1 (
@@ -94,21 +94,21 @@ if errorlevel 1 (
     pause
     exit /b 1
 )
-echo   Dependencies installed
+echo   依赖安装完成
 
 REM ---- 4. Frontend (pre-built in dist/) ------------------
-echo [4/5] Preparing frontend...
+echo [4/5] 准备前端...
 
 set FRONTEND_BUILT=0
 if exist "frontend\dist\index.html" (
-    echo   Pre-built frontend found, ready to use
+    echo   已有预构建的前端文件，可直接使用
     set FRONTEND_BUILT=1
 )
 
 REM Build if Node.js available
 where node >nul 2>&1
 if not errorlevel 1 (
-    echo   Node.js found, building latest...
+    echo   检测到 Node.js，正在构建最新前端...
     cd frontend
 
     where pnpm >nul 2>&1
@@ -122,20 +122,19 @@ if not errorlevel 1 (
     )
 
     if exist "dist\index.html" (
-        echo   Frontend built successfully
+        echo   前端构建完成
         set FRONTEND_BUILT=1
     )
     cd ..
 )
 
 if "%FRONTEND_BUILT%"=="0" (
-    echo   WARNING: Frontend not built.
-    echo   The app may not display correctly.
-    echo   Install Node.js to build: https://nodejs.org/
+    echo   警告：前端未构建，应用可能无法正常显示
+    echo   如需自定义前端，请安装 Node.js 18+
 )
 
 REM ---- 5. Port check & Launch ---------------------------
-echo [5/5] Starting application...
+echo [5/5] 启动应用...
 
 :check_port
 netstat -ano 2>nul | findstr "0.0.0.0:%PORT% " >nul 2>&1
@@ -151,14 +150,14 @@ goto check_port
 :launch
 echo.
 echo ============================================
-echo  Starting QwenSub
-echo  Open http://127.0.0.1:%PORT% in your browser
-echo  Press Ctrl+C to stop
+echo  正在启动 QwenSubs v0.0.2
+echo  访问 http://127.0.0.1:%PORT%
+echo  按 Ctrl+C 停止服务
 echo ============================================
 echo.
 
 "%VENV_PYTHON%" -m uvicorn backend.main:app --host 0.0.0.0 --port %PORT%
 
 echo.
-echo Server stopped.
+echo 服务已停止。
 pause
