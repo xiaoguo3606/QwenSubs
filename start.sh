@@ -142,7 +142,7 @@ ok "Python: $($PYTHON --version 2>&1)"
 
 # ffmpeg
 if command -v ffmpeg &>/dev/null; then
-    ok "ffmpeg: $({ ffmpeg -version 2>/dev/null | head -1 | grep -oP 'ffmpeg version \S+' || echo "已安装"; })"
+    ok "ffmpeg: $({ ffmpeg -version 2>/dev/null | head -1 | grep -oE 'ffmpeg version [^ ]+' || echo "已安装"; })"
 else
     warn "ffmpeg 未安装（音频处理需要）"
     if [[ "$OSTYPE" == "darwin"* ]]; then
