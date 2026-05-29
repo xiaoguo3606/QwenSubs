@@ -77,7 +77,7 @@ def download_model(
             check=True, capture_output=True,
         )
 
-    result = subprocess.run(cmd, env={**os.environ, **env}, capture_output=True, text=True)
+    result = subprocess.run(cmd, env=_build_env(env), capture_output=True, text=True)
 
     if result.returncode != 0:
         err_tail = result.stderr.strip()[-200:]
@@ -87,21 +87,24 @@ def download_model(
         progress_callback(f"{model_id} 下载完成")
 
 
+def _build_env(extra: dict | None = None) -> dict:
+    """Return environment with venv Scripts added to PATH and optional extras merged."""
+    env = os.environ.copy()
+    scripts_dir = str(Path(sys.executable).parent)
+    path = env.get("PATH", "")
+    if scripts_dir not in path:
+        env["PATH"] = scripts_dir + os.pathsep + path
+    if extra:
+        env.update(extra)
+    return env
+
+
 def _build_cmd(source_config: dict, model_id: str, local_dir: str) -> list[str]:
-    """Build subprocess command, resolving Python entry points for Windows compatibility."""
+    """Build subprocess command from source config."""
     cmd = [
         part.format(model_id=model_id, local_dir=str(local_dir))
         for part in source_config["cmd"]
     ]
-    # On Windows, entry-point scripts (.exe/.cmd) may not be in PATH when
-    # running under uvicorn.  Invoke via python -m when possible.
-    entry_point = cmd[0]
-    python_module = {
-        "modelscope": "modelscope",
-        "huggingface-cli": "huggingface_hub.commandline.huggingface_cli",
-    }.get(entry_point)
-    if python_module is not None:
-        cmd = [sys.executable, "-m", python_module] + cmd[1:]
     return cmd
 
 
@@ -128,7 +131,7 @@ def download_model_with_progress(
     yield 0.0, f"正在连接 {source}..."
 
     process = subprocess.Popen(
-        cmd, env={**os.environ, **env},
+        cmd, env=_build_env(env),
         stderr=subprocess.PIPE,
         stdout=subprocess.PIPE,
         universal_newlines=True, bufsize=1,

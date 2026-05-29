@@ -173,12 +173,24 @@ echo   依赖安装完成
 REM ---- 3b. CUDA check (Windows only) -------------------------
 "%VENV_PYTHON%" -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
 if errorlevel 1 (
-    REM Check if NVIDIA GPU exists via nvidia-smi
     where nvidia-smi >nul 2>&1
     if not errorlevel 1 (
         echo   检测到 NVIDIA 显卡，正在安装 CUDA 版 PyTorch...
-        "%VENV_PYTHON%" -m pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cu124 -q
-        echo   CUDA PyTorch 安装完成
+        echo.
+        echo   ▸ 尝试国内镜像...
+        "%VENV_PYTHON%" -m pip install "torch>=2.0" --index-url https://mirrors.aliyun.com/pytorch/whl/cu124 2>&1
+        "%VENV_PYTHON%" -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+        if errorlevel 1 (
+            echo.
+            echo   ▸ 尝试官方源...
+            "%VENV_PYTHON%" -m pip install "torch>=2.0" --index-url https://download.pytorch.org/whl/cu124 2>&1
+        )
+        "%VENV_PYTHON%" -c "import torch; exit(0 if torch.cuda.is_available() else 1)" >nul 2>&1
+        if not errorlevel 1 (
+            echo   CUDA PyTorch 安装成功
+        ) else (
+            echo   [警告] CUDA PyTorch 安装失败，将使用 CPU 模式运行
+        )
     )
 )
 
