@@ -68,27 +68,52 @@ echo   未找到 ffmpeg
 echo   WAV/FLAC/OGG 格式可用内置工具处理
 echo   其他格式（MP3/M4A 等）需要 ffmpeg
 echo.
-echo   按任意键自动下载 ffmpeg（约 5 秒），或关闭窗口手动安装
+echo   按任意键自动下载 ffmpeg，或关闭窗口手动安装
 pause >nul
-echo   正在下载 ffmpeg...
-powershell -Command "try { (New-Object System.Net.WebClient).DownloadFile('https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip', '%TEMP%\ffmpeg.zip') } catch { exit 1 }" >nul 2>&1
-if not exist "%TEMP%\ffmpeg.zip" (
-    echo   ffmpeg 下载失败，请手动安装：https://ffmpeg.org/download.html
-    goto :ffmpeg_done
+
+set FFMPEG_ZIP=%TEMP%\ffmpeg.zip
+set FFMPEG_DIR=%~dp0ffmpeg-bin
+
+REM 尝试多个下载源（带进度显示和超时）
+set FFMPEG_OK=0
+
+echo.
+echo   ▸ 尝试下载源 1/2（GitHub）...
+curl.exe -L -o "%FFMPEG_ZIP%" --connect-timeout 15 --max-time 180 "https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip"
+if exist "%FFMPEG_ZIP%" (
+    for %%i in ("%FFMPEG_ZIP%") do if %%~zi gtr 1000 set FFMPEG_OK=1
 )
-echo   正在解压 ffmpeg...
-powershell -Command "Expand-Archive -Path '%TEMP%\ffmpeg.zip' -DestinationPath '%TEMP%\ffmpeg-extracted' -Force" >nul 2>&1
-for /d %%i in ("%TEMP%\ffmpeg-extracted\*") do (
-    if exist "%%i\bin\ffmpeg.exe" (
-        xcopy /e /i /y "%%i\bin" "%~dp0ffmpeg-bin\" >nul
+
+if %FFMPEG_OK%==0 (
+    echo.
+    echo   ▸ 尝试下载源 2/2（国内镜像）...
+    curl.exe -L -o "%FFMPEG_ZIP%" --connect-timeout 15 --max-time 300 "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
+    if exist "%FFMPEG_ZIP%" (
+        for %%i in ("%FFMPEG_ZIP%") do if %%~zi gtr 1000 set FFMPEG_OK=1
     )
 )
-del "%TEMP%\ffmpeg.zip"
-if exist "%~dp0ffmpeg-bin\ffmpeg.exe" (
-    set "PATH=%~dp0ffmpeg-bin;%PATH%"
-    echo   ffmpeg 已安装
+
+if %FFMPEG_OK%==0 (
+    echo.
+    echo   ffmpeg 下载失败，请手动安装：
+    echo   https://ffmpeg.org/download.html
+    goto :ffmpeg_done
+)
+
+echo.
+echo   正在解压 ffmpeg...
+powershell -Command "try { Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%TEMP%\ffmpeg-extracted' -Force } catch { exit 1 }" >nul 2>&1
+for /d %%i in ("%TEMP%\ffmpeg-extracted\*") do (
+    if exist "%%i\bin\ffmpeg.exe" (
+        xcopy /e /i /y "%%i\bin" "%FFMPEG_DIR%\" >nul
+    )
+)
+del "%FFMPEG_ZIP%"
+if exist "%FFMPEG_DIR%\ffmpeg.exe" (
+    set "PATH=%FFMPEG_DIR%;%PATH%"
+    echo   ffmpeg 已安装到 %FFMPEG_DIR%
 ) else (
-    echo   ffmpeg 解压失败，请手动安装：https://ffmpeg.org/download.html
+    echo   解压失败，请手动安装：https://ffmpeg.org/download.html
 )
 goto :ffmpeg_done
 :ffmpeg_found
