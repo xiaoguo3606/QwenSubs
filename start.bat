@@ -15,14 +15,13 @@ set MAX_PORT=8005
 REM ---- 1. Find or install Python -------------------------
 echo [1/5] 检查 Python 环境...
 
-set PYTHON_CMD=python
 
 REM Check if Python exists and meets version requirement
 python --version >nul 2>&1
 if not errorlevel 1 (
     python -c "import sys; sys.exit(0 if sys.version_info >= (3,10) else 1)" >nul 2>&1
     if not errorlevel 1 (
-        for /f "usebackq delims=" %%i in (`python --version 2^>nul`) do echo   %%i found
+        for /f "usebackq delims=" %%i in (`python --version 2^>nul`) do echo   %%i
         goto :setup_env
     )
 )
@@ -39,25 +38,25 @@ powershell -Command "try { (New-Object System.Net.WebClient).DownloadFile('https
 
 if not exist "%INSTALLER%" (
     echo.
-    echo   [ERROR] Download failed. Please install Python manually:
+    echo   [错误] 下载失败，请手动安装 Python：
     echo   https://www.python.org/downloads/
-    echo   Make sure to check "Add Python to PATH".
+    echo   安装时请勾选 "Add Python to PATH"。
     pause
     exit /b 1
 )
 
-echo   Installing Python %PY_VERSION%...
+echo   正在安装 Python %PY_VERSION%...
 start /wait "" "%INSTALLER%" /quiet InstallAllUsers=0 PrependPath=1 Include_pip=1 Include_test=0 Include_doc=0 Include_tcltk=0
 
 REM Wait for install to complete
-echo   Waiting for installation...
+echo   等待安装完成...
 :wait_python
 timeout /t 2 /nobreak >nul
 python --version >nul 2>&1
 if errorlevel 1 goto wait_python
 
 del "%INSTALLER%"
-for /f "usebackq delims=" %%i in (`python --version 2^>nul`) do echo   %%i installed
+for /f "usebackq delims=" %%i in (`python --version 2^>nul`) do echo   %%i 已安装
 
 REM ---- 2. ffmpeg check ----------------------------------
 :setup_env
@@ -78,7 +77,7 @@ if not exist "%VENV_PYTHON%" (
 )
 if not exist "%VENV_PYTHON%" (
     echo.
-    echo   [ERROR] Failed to create virtual environment.
+    echo   [错误] 创建虚拟环境失败。
     pause
     exit /b 1
 )
@@ -89,8 +88,8 @@ echo   正在安装依赖（可能需要一些时间）...
 "%VENV_PYTHON%" -m pip install -r requirements.txt -q
 if errorlevel 1 (
     echo.
-    echo   [ERROR] Failed to install dependencies.
-    echo   Check your network connection and try again.
+    echo   [错误] 依赖安装失败。
+    echo   请检查网络连接后重试。
     pause
     exit /b 1
 )
@@ -137,11 +136,11 @@ REM ---- 5. Port check & Launch ---------------------------
 echo [5/5] 启动应用...
 
 :check_port
-netstat -ano 2>nul | findstr "0.0.0.0:%PORT% " >nul 2>&1
+netstat -ano 2>nul | findstr ":%PORT% " >nul 2>&1
 if errorlevel 1 goto launch
 set /a PORT+=1
 if %PORT% gtr %MAX_PORT% (
-    echo   Ports 8000-%MAX_PORT% all in use.
+    echo   端口 8000-%MAX_PORT% 均被占用。
     pause
     exit /b 1
 )
