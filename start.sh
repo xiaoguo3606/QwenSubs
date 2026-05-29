@@ -8,7 +8,7 @@ echo "║      QwenSubs v0.0.2 — 一键启动       ║"
 echo "╚══════════════════════════════════════╝"
 echo ""
 
-# ── Colors ───────────────────────────────────────────
+# ── 颜色 ───────────────────────────────────────────
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -20,7 +20,7 @@ ok()    { echo -e " ${GREEN}✓${NC} $1"; }
 warn()  { echo -e " ${YELLOW}⚠${NC} $1"; }
 err()   { echo -e " ${RED}✗${NC} $1"; }
 
-# ── Find or install Python ────────────────────────────
+# ── 查找或安装 Python ──────────────────────────────
 PYTHON=""
 MIN_PYTHON="3.10"
 
@@ -51,7 +51,7 @@ install_python_macos() {
         fi
     fi
 
-    # Fallback: download official installer
+    # 备用方案：从官网下载安装包
     warn "未找到 Homebrew，将从 python.org 下载安装包"
     local PY_VERSION="3.12.9"
     local PKG_URL="https://www.python.org/ftp/python/$PY_VERSION/python-$PY_VERSION-macos11.pkg"
@@ -68,7 +68,7 @@ install_python_macos() {
     sudo installer -pkg "$TMP_PKG" -target / 2>/dev/null
     rm -f "$TMP_PKG"
 
-    # Try the installed Python
+    # 检查安装后的 Python
     for cmd in /usr/local/bin/python3 /usr/bin/python3 python3; do
         if command -v "$cmd" &>/dev/null; then
             local ver=$("$cmd" -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
@@ -112,7 +112,7 @@ install_python_linux() {
     return 1
 }
 
-# ── Pre-flight checks ────────────────────────────────
+# ── 环境检查 ────────────────────────────────────────
 echo ""
 info "检查系统环境..."
 
@@ -155,7 +155,7 @@ else
     echo ""
 fi
 
-# ── Virtual environment ──────────────────────────────
+# ── 虚拟环境 ────────────────────────────────────────
 echo ""
 info "设置 Python 虚拟环境..."
 
@@ -172,7 +172,7 @@ $VENV_PYTHON -m pip install --upgrade pip -q
 $VENV_PYTHON -m pip install -r requirements.txt -q
 ok "依赖安装完成"
 
-# ── Optional: build frontend ──────────────────────────
+# ── 前端构建（可选） ────────────────────────────────
 echo ""
 info "准备前端..."
 
@@ -209,7 +209,7 @@ if [ "$FRONTEND_BUILT" != "true" ]; then
     echo "    如需自定义前端，请安装 Node.js 18+"
 fi
 
-# ── Port check ───────────────────────────────────────
+# ── 端口检查 ───────────────────────────────────────
 PORT=8000
 MAX_PORT=8005
 
@@ -241,7 +241,7 @@ if check_port $PORT; then
     fi
 fi
 
-# ── Launch ───────────────────────────────────────────
+# ── 启动 ───────────────────────────────────────────
 echo ""
 echo "╔══════════════════════════════════════╗"
 echo "║  正在启动 QwenSubs v0.0.2             ║"
