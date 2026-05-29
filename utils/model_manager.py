@@ -64,13 +64,10 @@ def download_model(
     local_path = Path(local_dir)
     local_path.mkdir(parents=True, exist_ok=True)
 
+    cmd = _build_cmd(source_config, model_id, str(local_path))
+
     if progress_callback:
         progress_callback(f"正在从 {source} 下载 {model_id}...")
-
-    cmd = [
-        part.format(model_id=model_id, local_dir=str(local_path))
-        for part in source_config["cmd"]
-    ]
 
     env = dict(source_config["env"])
     if source == "hf-mirror":
@@ -89,6 +86,24 @@ def download_model(
         progress_callback(f"{model_id} 下载完成")
 
 
+def _build_cmd(source_config: dict, model_id: str, local_dir: str) -> list[str]:
+    """Build subprocess command, resolving Python entry points for Windows compatibility."""
+    cmd = [
+        part.format(model_id=model_id, local_dir=str(local_dir))
+        for part in source_config["cmd"]
+    ]
+    # On Windows, entry-point scripts (.exe/.cmd) may not be in PATH when
+    # running under uvicorn.  Invoke via python -m when possible.
+    entry_point = cmd[0]
+    python_module = {
+        "modelscope": "modelscope",
+        "huggingface-cli": "huggingface_hub.commandline.huggingface_cli",
+    }.get(entry_point)
+    if python_module is not None:
+        cmd = [sys.executable, "-m", python_module] + cmd[1:]
+    return cmd
+
+
 def download_model_with_progress(
     model_id: str, local_dir: str, source: str = "modelscope",
 ):
@@ -100,10 +115,7 @@ def download_model_with_progress(
     local_path = Path(local_dir)
     local_path.mkdir(parents=True, exist_ok=True)
 
-    cmd = [
-        part.format(model_id=model_id, local_dir=str(local_path))
-        for part in source_config["cmd"]
-    ]
+    cmd = _build_cmd(source_config, model_id, str(local_path))
 
     env = dict(source_config["env"])
     if source == "hf-mirror":
