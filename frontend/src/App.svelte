@@ -34,7 +34,7 @@
   <header class="app-header">
     <div class="header-row">
       <div class="header-text">
-        <h1>QwenSubs <span class="version">V0.0.2</span></h1>
+        <h1>QwenSubs <span class="version">V0.0.3</span></h1>
         <p class="subtitle">基于 <em>Qwen3-ASR</em> 的字幕生成助手，中文友好，专为精准的中文字幕设计。</p>
       </div>
       <div class="header-actions">

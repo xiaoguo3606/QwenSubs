@@ -36,7 +36,7 @@ async def lifespan(app: FastAPI):
     logger.info("Backend shut down: models unloaded")
 
 
-app = FastAPI(title="QwenSubs", version="0.0.2", lifespan=lifespan)
+app = FastAPI(title="QwenSubs", version="0.0.3", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

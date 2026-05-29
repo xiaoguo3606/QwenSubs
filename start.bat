@@ -3,7 +3,7 @@ cd /d "%~dp0"
 chcp 65001 >nul 2>&1
 
 echo ============================================
-echo      QwenSubs v0.0.2 - 一键启动
+echo      QwenSubs v0.0.3 - 一键启动
 echo ============================================
 echo.
 
@@ -187,7 +187,7 @@ goto check_port
 :launch
 echo.
 echo ============================================
-echo  正在启动 QwenSubs v0.0.2
+echo  正在启动 QwenSubs v0.0.3
 echo  访问 http://127.0.0.1:%PORT%
 echo  按 Ctrl+C 停止服务
 echo ============================================
