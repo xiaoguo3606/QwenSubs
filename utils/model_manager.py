@@ -77,10 +77,11 @@ def download_model(
             check=True, capture_output=True,
         )
 
-    result = subprocess.run(cmd, env={**os.environ, **env})
+    result = subprocess.run(cmd, env={**os.environ, **env}, capture_output=True, text=True)
 
     if result.returncode != 0:
-        raise RuntimeError(f"模型下载失败: {model_id} (source: {source})")
+        err_tail = result.stderr.strip()[-200:]
+        raise RuntimeError(f"模型下载失败: {model_id} (source: {source})\n{err_tail}")
 
     if progress_callback:
         progress_callback(f"{model_id} 下载完成")
@@ -129,11 +130,14 @@ def download_model_with_progress(
     process = subprocess.Popen(
         cmd, env={**os.environ, **env},
         stderr=subprocess.PIPE,
+        stdout=subprocess.PIPE,
         universal_newlines=True, bufsize=1,
     )
 
+    stderr_lines: list[str] = []
     for line in process.stderr:
         line = line.strip()
+        stderr_lines.append(line)
         pct_match = re.search(r"(\d+)%", line)
         if pct_match:
             pct = int(pct_match.group(1)) / 100.0
@@ -142,7 +146,9 @@ def download_model_with_progress(
 
     process.wait()
     if process.returncode != 0:
-        raise RuntimeError(f"模型下载失败: {model_id} (source: {source})")
+        # Include last 5 lines of stderr for diagnostics
+        tail = "\n".join(stderr_lines[-5:])
+        raise RuntimeError(f"模型下载失败: {model_id} (source: {source})\n{tail}")
     yield 1.0, f"{model_id} 下载完成"
 
 
