@@ -102,18 +102,42 @@ if %FFMPEG_OK%==0 (
 
 echo.
 echo   正在解压 ffmpeg...
-powershell -Command "try { Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%TEMP%\ffmpeg-extracted' -Force } catch { exit 1 }" >nul 2>&1
-for /d %%i in ("%TEMP%\ffmpeg-extracted\*") do (
-    if exist "%%i\bin\ffmpeg.exe" (
-        xcopy /e /i /y "%%i\bin" "%FFMPEG_DIR%\" >nul
-    )
+if not exist "%TEMP%\ffmpeg-extracted" mkdir "%TEMP%\ffmpeg-extracted"
+
+REM 先用 PowerShell 解压，失败则用 tar
+REM 注意：无法判定实际文件所在目录，所以用 dir 搜索
+set EXTRACTED_DIR=%TEMP%\ffmpeg-extracted
+
+REM 清空残留
+if exist "%EXTRACTED_DIR%" rmdir /s /q "%EXTRACTED_DIR%" >nul 2>&1
+mkdir "%EXTRACTED_DIR%" >nul 2>&1
+
+REM 尝试 PowerShell 解压
+powershell -Command "try { Expand-Archive -Path '%FFMPEG_ZIP%' -DestinationPath '%EXTRACTED_DIR%' -Force; exit 0 } catch { exit 1 }" >nul 2>&1
+
+REM 如果 PowerShell 解压失败，尝试 tar（Windows 10 1803+ 内置）
+if not exist "%EXTRACTED_DIR%\*" (
+    tar -xf "%FFMPEG_ZIP%" -C "%EXTRACTED_DIR%" >nul 2>&1
 )
+
+REM 从解压目录中递归搜索 ffmpeg.exe
+if not exist "%FFMPEG_DIR%" mkdir "%FFMPEG_DIR%" >nul 2>&1
+for /r "%EXTRACTED_DIR%" %%f in (ffmpeg.exe) do (
+    if exist "%%f" copy "%%f" "%FFMPEG_DIR%\ffmpeg.exe" >nul 2>&1
+)
+for /r "%EXTRACTED_DIR%" %%f in (ffprobe.exe) do (
+    if exist "%%f" copy "%%f" "%FFMPEG_DIR%\ffprobe.exe" >nul 2>&1
+)
+
 del "%FFMPEG_ZIP%"
+rmdir /s /q "%EXTRACTED_DIR%" >nul 2>&1
+
 if exist "%FFMPEG_DIR%\ffmpeg.exe" (
     set "PATH=%FFMPEG_DIR%;%PATH%"
     echo   ffmpeg 已安装到 %FFMPEG_DIR%
 ) else (
-    echo   解压失败，请手动安装：https://ffmpeg.org/download.html
+    echo   解压失败，请手动安装 ffmpeg：
+    echo   https://ffmpeg.org/download.html
 )
 goto :ffmpeg_done
 :ffmpeg_found
