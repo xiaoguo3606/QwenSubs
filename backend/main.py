@@ -20,12 +20,13 @@ logger = logging.getLogger(__name__)
 UPLOAD_DIR = Path(__file__).resolve().parent.parent / "uploads"
 SUBTITLE_DIR = Path(__file__).resolve().parent.parent / "subtitle_output"
 
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(SUBTITLE_DIR, exist_ok=True)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    os.makedirs(SUBTITLE_DIR, exist_ok=True)
     app.state.registry = ModelRegistry()
     app.state.task_manager = TaskManager()
     logger.info("Backend started: registry and task manager initialized")
