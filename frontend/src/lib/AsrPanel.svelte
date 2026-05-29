@@ -29,7 +29,13 @@
 
   onDestroy(() => poller.stop())
 
-  // Check LLM config and hint text to decide if warning needed
+  // Re-check LLM config whenever hint text changes (user may have just saved
+  // LLM settings and returned to the ASR panel).
+  $effect(() => {
+    $hintText  // establish dependency
+    checkLlmConfig()
+  })
+
   async function checkLlmConfig() {
     try {
       const res = await fetch('/api/config')
@@ -39,7 +45,6 @@
       }
     } catch { /* ignore */ }
   }
-  checkLlmConfig()
 
   $effect(() => {
     showLlmWarning = !llmEnabled && $hintText.trim().length > 0

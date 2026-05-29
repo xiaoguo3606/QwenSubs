@@ -10,6 +10,9 @@
   let saving = $state(false)
   let saved = $state(false)
   let error = $state('')
+  let llmTesting = $state(false)
+  let llmTestResult = $state(null)
+  let llmTestError = $state('')
 
   onDestroy(() => downloadPoller.stop())
 
@@ -30,6 +33,38 @@
       error = '加载失败: ' + (e.message || '')
     } finally {
       loading = false
+    }
+  }
+
+  async function testLlmConnection() {
+    llmTesting = true
+    llmTestResult = null
+    llmTestError = ''
+    try {
+      const res = await fetch('/api/config/test-llm', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          llm_type: config.llm_type,
+          ollama_endpoint: config.ollama_endpoint,
+          ollama_model: config.ollama_model,
+          openai_base_url: config.openai_base_url,
+          openai_api_key: config.openai_api_key,
+          openai_model: config.openai_model,
+        }),
+      })
+      const data = await res.json()
+      if (data.status === 'ok') {
+        llmTestResult = true
+      } else {
+        llmTestResult = false
+        llmTestError = data.message || '连接失败'
+      }
+    } catch (e) {
+      llmTestResult = false
+      llmTestError = e.message || '连接失败'
+    } finally {
+      llmTesting = false
     }
   }
 
@@ -290,6 +325,27 @@
             <input type="text" bind:value={config.openai_model} placeholder="gpt-4o-mini" />
           </div>
         {/if}
+
+        <!-- test connection -->
+        <div class="llm-test-row">
+          <button class="btn-test" onclick={testLlmConnection} disabled={llmTesting}>
+            {llmTesting ? '测试中...' : '测试连接'}
+          </button>
+          {#if llmTesting}
+            <span class="test-spinner">⏳</span>
+          {/if}
+          {#if llmTestResult === true}
+            <span class="test-ok">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              连接成功
+            </span>
+          {:else if llmTestResult === false}
+            <span class="test-err">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              {llmTestError}
+            </span>
+          {/if}
+        </div>
       {/if}
     </div>
 
@@ -449,4 +505,40 @@
   .actions { display: flex; align-items: center; gap: 0.75rem; padding-top: 0.25rem; }
   .saved-msg { font-size: 0.8rem; color: var(--green); }
   .error-msg { color: var(--red); font-size: 0.82rem; margin: 0.5rem 0 0; }
+  .llm-test-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  .btn-test {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+  }
+  .btn-test:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  .btn-test:disabled { opacity: 0.5; cursor: not-allowed; }
+  .test-spinner { font-size: 0.85rem; color: var(--text-muted); }
+  .test-ok {
+    font-size: 0.78rem;
+    color: var(--green);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .test-err {
+    font-size: 0.78rem;
+    color: #ef4444;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    word-break: break-all;
+  }
+  .test-err svg { flex-shrink: 0; }
 </style>

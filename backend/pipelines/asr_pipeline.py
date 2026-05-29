@@ -120,9 +120,8 @@ def run_asr_pipeline(
                 _report(progress_cb, base_progress + rel_progress,
                         f"识别第 {idx+1}/{len(chunks)} 段...")
 
-                hotwords = hint_text.strip() if hint_text and hint_text.strip() else None
                 results = registry.asr_engine.transcribe(
-                    chunk_path, language=lang, hotwords=hotwords
+                    chunk_path, language=lang
                 )
                 _check_cancel()
 
